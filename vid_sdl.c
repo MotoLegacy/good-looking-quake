@@ -4,7 +4,7 @@
 #include "quakedef.h"
 #include "d_local.h"
 
-viddef_t    vid;                // global video state
+extern viddef_t    vid;                // global video state
 unsigned short  d_8to16table[256];
 
 #define BASEWIDTH           320
@@ -23,8 +23,8 @@ static float   mouse_x, mouse_y;
 static int mouse_oldbuttonstate = 0;
 
 // No support for option menus
-void (*vid_menudrawfn)(void) = NULL;
-void (*vid_menukeyfn)(int key) = NULL;
+//void (*vid_menudrawfn)(void) = NULL;
+//void (*vid_menukeyfn)(int key) = NULL;
 
 void    VID_SetPalette (unsigned char *palette)
 {
