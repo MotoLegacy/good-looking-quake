@@ -291,6 +291,12 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 	up[2] = cr*cp;
 }
 
+float VectorLength (vec3_t v)
+{
+	// naievil -- fixme we are definitely going to lose precision here
+	return (float)sqrt(DotProduct(v, v));
+}
+
 int VectorCompare (vec3_t v1, vec3_t v2)
 {
 	int		i;

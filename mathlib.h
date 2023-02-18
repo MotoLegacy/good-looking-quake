@@ -83,6 +83,37 @@ extern vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
 #define VectorCopy(a,b) {b[0]=a[0];b[1]=a[1];b[2]=a[2];}
 #define VectorNegate(a, b)	((b)[0] = -(a)[0], (b)[1] = -(a)[1], (b)[2] = -(a)[2])
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+static inline float InvSqrt( float number ) {
+    long i;
+    float x2, y;
+    const float threehalfs = 1.5F;
+
+    x2 = number * 0.5F;
+    y  = number;
+    i  = * ( long * ) &y;			// evil floating point bit level hacking
+    i  = 0x5f3759df - ( i >> 1 );               // what the fuck?
+    y  = * ( float * ) &i;
+    y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration
+//  y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+
+    return y;
+}
+#pragma GCC diagnostic pop
+
+static inline void VectorNormalizeNoRet (vec3_t v)
+{
+	float	length, ilength;
+
+	ilength = InvSqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+
+        v[0] *= ilength;
+        v[1] *= ilength;
+        v[2] *= ilength;
+}
+
+
 //johnfitz -- courtesy of lordhavoc
 #define VectorNormalizeFast(_v)\
 {\
