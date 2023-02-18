@@ -55,7 +55,25 @@ extern	int nanmask;
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
+#define DoublePrecisionDotProduct(x,y) ((double)(x)[0]*(y)[0]+(double)(x)[1]*(y)[1]+(double)(x)[2]*(y)[2])
+
+#define VectorInterpolate(v1, _frac, v2, v)		\
+do {											\
+	_mathlib_temp_float1 = _frac;				\
+												\
+	(v)[0] = (v1)[0] + _mathlib_temp_float1 * ((v2)[0] - (v1)[0]);\
+	(v)[1] = (v1)[1] + _mathlib_temp_float1 * ((v2)[1] - (v1)[1]);\
+	(v)[2] = (v1)[2] + _mathlib_temp_float1 * ((v2)[2] - (v1)[2]);\
+} while(0)
+
+
 #define CLAMP(min, x, max) ((x) < (min) ? (min) : (x) > (max) ? (max) : (x)) //johnfitz
+
+// Prototypes added by PM.
+void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
+extern int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
+extern float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
+extern vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
 
 #define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5)) //johnfitz -- from joequake
 
@@ -63,6 +81,7 @@ extern	int nanmask;
 #define VectorSubtract(a,b,c) {c[0]=a[0]-b[0];c[1]=a[1]-b[1];c[2]=a[2]-b[2];}
 #define VectorAdd(a,b,c) {c[0]=a[0]+b[0];c[1]=a[1]+b[1];c[2]=a[2]+b[2];}
 #define VectorCopy(a,b) {b[0]=a[0];b[1]=a[1];b[2]=a[2];}
+#define VectorNegate(a, b)	((b)[0] = -(a)[0], (b)[1] = -(a)[1], (b)[2] = -(a)[2])
 
 //johnfitz -- courtesy of lordhavoc
 #define VectorNormalizeFast(_v)\
@@ -78,12 +97,12 @@ extern	int nanmask;
 }
 
 // kristian - missing math functions
-#if !defined(max)
+/*#if !defined(max)
 inline int max (int x, int y);
 #endif
 #if !defined(min)
 inline int min (int x, int y);
-#endif
+#endif*/
 // kristian
 
 void TurnVector (vec3_t out, const vec3_t forward, const vec3_t side, float angle); //johnfitz

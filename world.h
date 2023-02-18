@@ -58,6 +58,8 @@ void SV_LinkEdict (edict_t *ent, qboolean touch_triggers);
 // sets ent->v.absmin and ent->v.absmax
 // if touchtriggers, calls prog functions for the intersected triggers
 
+qboolean SV_RecursiveHullCheck (hull_t *hull, int num, vec3_t p1, vec3_t p2, trace_t *trace);
+
 int SV_PointContents (vec3_t p);
 int SV_TruePointContents (vec3_t p);
 // returns the CONTENTS_* value from the world at the given point.

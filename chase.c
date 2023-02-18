@@ -32,9 +32,6 @@ vec3_t	chase_angles;
 vec3_t	chase_dest;
 vec3_t	chase_dest_angles;
 
-extern qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
-
-
 void Chase_Init (void)
 {
 	Cvar_RegisterVariable (&chase_back);
@@ -54,7 +51,7 @@ void TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 	trace_t	trace;
 
 	memset (&trace, 0, sizeof(trace));
-	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, 0, 1, start, end, &trace);
+	SV_RecursiveHullCheck (cl.worldmodel->hulls, 0, start, end, &trace);
 
 	VectorCopy (trace.endpos, impact);
 }
