@@ -278,7 +278,9 @@ typedef struct
 {
 	int		sentinal;
 	int		size;		// including sizeof(hunk_t), -1 = not allocated
+#ifndef OPT_WORSEHUNKDEBUG
 	char	name[8];
+#endif // OPT_WORSEHUNKDEBUG
 } hunk_t;
 
 byte	*hunk_base;
@@ -376,13 +378,19 @@ void Hunk_Print (qboolean all)
 	//
 	// print the single block
 	//
+#ifndef OPT_WORSEHUNKDEBUG
 		memcpy (name, h->name, 8);
 		if (all)
 			Con_Printf ("%8p :%8i %8s\n",h, h->size, name);
+#else
+		if (all)
+			Con_Printf ("%8p :%8i unknown (compiled with OPT_WORSEHUNKDEBUG)\n",h, h->size);
+#endif // OPT_WORSEHUNKDEBUG
 
 	//
 	// print the total
 	//
+#ifndef OPT_WORSEHUNKDEBUG
 		if (next == endlow || next == endhigh ||
 		strncmp (h->name, next->name, 8) )
 		{
@@ -391,6 +399,7 @@ void Hunk_Print (qboolean all)
 			count = 0;
 			sum = 0;
 		}
+#endif // OPT_WORSEHUNKDEBUG
 
 		h = next;
 	}
@@ -426,7 +435,11 @@ void *Hunk_AllocName (int size, char *name)
 	if (size < 0)
 		Sys_Error ("Hunk_Alloc: bad size: %i", size);
 
+#ifdef OPT_WORSEHUNKDEBUG
+	size = sizeof(hunk_t) + ((size+7)&~7);
+#else
 	size = sizeof(hunk_t) + ((size+15)&~15);
+#endif // OPT_WORSEHUNKDEBUG
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
 		Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
@@ -440,7 +453,10 @@ void *Hunk_AllocName (int size, char *name)
 
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
+
+#ifndef OPT_WORSEHUNKDEBUG
 	Q_strncpy (h->name, name, 8);
+#endif // OPT_WORSEHUNKDEBUG
 
 	return (void *)(h+1);
 }
@@ -531,7 +547,10 @@ void *Hunk_HighAllocName (int size, char *name)
 	memset (h, 0, size);
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
+
+#ifndef OPT_WORSEHUNKDEBUG
 	Q_strncpy (h->name, name, 8);
+#endif // OPT_WORSEHUNKDEBUG
 
 	return (void *)(h+1);
 }
@@ -577,7 +596,9 @@ typedef struct cache_system_s
 {
 	int						size;		// including this header
 	cache_user_t			*user;
+#ifndef OPT_WORSEHUNKDEBUG
 	char					name[16];
+#endif // OPT_WORSEHUNKDEBUG
 	struct cache_system_s	*prev, *next;
 	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing
 } cache_system_t;
@@ -603,7 +624,9 @@ void Cache_Move ( cache_system_t *c)
 
 		Q_memcpy ( new+1, c+1, c->size - sizeof(cache_system_t) );
 		new->user = c->user;
+#ifndef OPT_WORSEHUNKDEBUG
 		Q_memcpy (new->name, c->name, sizeof(new->name));
+#endif // OPT_WORSEHUNKDEBUG
 		Cache_Free (c->user);
 		new->user->data = (void *)(new+1);
 	}
@@ -794,7 +817,11 @@ void Cache_Print (void)
 
 	for (cd = cache_head.next ; cd != &cache_head ; cd = cd->next)
 	{
+#ifndef OPT_WORSEHUNKDEBUG
 		Con_Printf ("%8i : %s\n", cd->size, cd->name);
+#else
+		Con_Printf ("%8i : unknown (compiled with OPT_WORSEHUNKDEBUG)\n", cd->size);
+#endif // OPT_WORSEHUNKDEBUG
 	}
 }
 
@@ -897,7 +924,11 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 	if (size <= 0)
 		Sys_Error ("Cache_Alloc: size %i", size);
 
+#ifdef OPT_WORSEHUNKDEBUG
+	size = (size + sizeof(cache_system_t));
+#else
 	size = (size + sizeof(cache_system_t) + 15) & ~15;
+#endif // OPT_WORSEHUNKDEBUG
 
 // find memory for it
 	while (1)
@@ -905,7 +936,9 @@ void *Cache_Alloc (cache_user_t *c, int size, char *name)
 		cs = Cache_TryAlloc (size, false);
 		if (cs)
 		{
+#ifndef OPT_WORSEHUNKDEBUG
 			strncpy (cs->name, name, sizeof(cs->name)-1);
+#endif // OPT_WORSEHUNKDEBUG
 			c->data = (void *)(cs+1);
 			cs->user = c;
 			break;
