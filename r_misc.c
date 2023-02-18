@@ -448,7 +448,9 @@ void R_SetupFrame (void)
 		
 	R_CheckVariables ();
 	
+#ifndef OPT_NOLIGHTSTYLES
 	R_AnimateLight ();
+#endif // OPT_NOLIGHTSTYLES
 
 	r_framecount++;
 

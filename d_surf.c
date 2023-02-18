@@ -269,10 +269,17 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 // if the surface is animating or flashing, flush the cache
 //
 	r_drawsurf.texture = R_TextureAnimation (surface->texinfo->texture);
+#ifndef OPT_NOLIGHTSTYLES
 	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
 	r_drawsurf.lightadj[3] = d_lightstylevalue[surface->styles[3]];
+#else
+	r_drawsurf.lightadj[0] = 255;
+	r_drawsurf.lightadj[1] = 255;
+	r_drawsurf.lightadj[2] = 255;
+	r_drawsurf.lightadj[3] = 255;
+#endif // OPT_NOLIGHTSTYLES
 	
 //
 // see if the cache holds apropriate data

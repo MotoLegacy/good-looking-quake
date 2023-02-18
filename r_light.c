@@ -219,7 +219,11 @@ int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 			for (maps = 0 ; maps < MAXLIGHTMAPS && surf->styles[maps] != 255 ;
 					maps++)
 			{
+#ifndef OPT_NOLIGHTSTYLES
 				scale = d_lightstylevalue[surf->styles[maps]];
+#else
+				scale = 255;
+#endif
 				r += *lightmap * scale;
 				lightmap += ((surf->extents[0]>>4)+1) *
 						((surf->extents[1]>>4)+1);
