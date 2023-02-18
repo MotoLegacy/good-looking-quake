@@ -136,6 +136,7 @@ int Q_strcmp (const char *s1, const char *s2);
 int Q_strncmp (const char *s1, const char *s2, int count);
 int Q_strcasecmp (const char *s1, const char *s2);
 int Q_strncasecmp (const char *s1, const char *s2, int n);
+void Q_strncpyz (char *dest, char *src, size_t size);
 int	Q_atoi (const char *str);
 float Q_atof (const char *str);
 

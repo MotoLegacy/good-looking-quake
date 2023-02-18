@@ -23,6 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+// naievil -- texture conversion start 
+byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
+byte temp_pixel_storage_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE*4]; // naievil -- rgba storage for max pic size 
+// naievil -- texture conversion end
+
 typedef struct {
 	vrect_t	rect;
 	int		width;
@@ -896,3 +901,47 @@ void Draw_EndDisc (void)
 	D_EndDirectRect (vid.width - 24, 0, 24, 24);
 }
 
+/* sample a 24-bit RGB value to one of the colours on the existing 8-bit palette */
+unsigned char convert_24_to_8(const unsigned char palette[768], const int rgb[3])
+{
+  int i, j;
+  int best_index = -1;
+  int best_dist = 0;
+
+  for (i = 0; i < 256; i+=1)
+  {
+    int dist = 0;
+
+    for (j = 0; j < 3; j++)
+    {
+    /* note that we could use RGB luminosity bias for greater accuracy, but quake's colormap apparently didn't do this */
+      int d = abs(rgb[j] - palette[i*3+j]);
+      dist += d * d;
+    }
+
+    if (best_index == -1 || dist < best_dist)
+    {
+      best_index = i;
+      best_dist = dist;
+    }
+  }
+
+  //Con_Printf("RGB: %d %d %d\tBest index: %d\n", rgb[0], rgb[1], rgb[2], best_index);
+
+  return (unsigned char)best_index;
+}
+
+byte findclosestpalmatch(byte r, byte g, byte b, byte a)
+{
+	// naievil -- force alpha
+	if (a == 0 || a < 128) {
+		return 255;
+	}
+
+	int rgb[3];
+	rgb[0] = r;
+	rgb[1] = g; 
+	rgb[2] = b;
+
+	return (byte)convert_24_to_8(host_basepal, rgb);
+}

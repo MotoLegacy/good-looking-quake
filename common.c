@@ -438,6 +438,12 @@ float Q_atof (const char *str)
 	return val*sign;
 }
 
+void Q_strncpyz (char *dest, char *src, size_t size)
+{
+	strncpy (dest, src, size - 1);
+	dest[size-1] = 0;
+}
+
 /*
 ============================================================================
 

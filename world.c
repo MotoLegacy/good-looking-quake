@@ -147,12 +147,30 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 			Sys_Error ("MOVETYPE_PUSH with a non bsp model");
 
 		VectorSubtract (maxs, mins, size);
-		if (size[0] < 3)
-			hull = &model->hulls[0];
-		else if (size[0] <= 32)
-			hull = &model->hulls[1];
-		else
-			hull = &model->hulls[2];
+
+		// naievil -- hlbsp implementation 
+		if (model->bspversion == HL_BSPVERSION) {
+			if (size[0] < 3) {
+				hull = &model->hulls[0];
+			} else if (size[0] <= 32) {
+				if (size[2] < 54) {
+					// Pick the nearest of 36 or 72
+					hull = &model->hulls[3]; 	// 32x32x36
+				} else {
+					hull = &model->hulls[1];	// 32x32x72
+				}
+			} else {
+				hull = &model->hulls[2]; 		// 64x64x64
+			}
+		} else {
+
+			if (size[0] < 3)
+				hull = &model->hulls[0];
+			else if (size[0] <= 32)
+				hull = &model->hulls[1];
+			else
+				hull = &model->hulls[2];
+		}
 
 // calculate an offset value to center the origin
 		VectorSubtract (hull->clip_mins, mins, offset);
@@ -164,7 +182,7 @@ hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
 		VectorSubtract (ent->v.mins, maxs, hullmins);
 		VectorSubtract (ent->v.maxs, mins, hullmaxs);
 		hull = SV_HullForBox (hullmins, hullmaxs);
-
+		
 		VectorCopy (ent->v.origin, offset);
 	}
 

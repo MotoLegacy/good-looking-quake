@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "r_local.h"
 
+// FIXME: add support for wad3 individual palettes (and pcx lol)
+extern byte converted_pixels[MAX_SINGLE_PLANE_PIXEL_SIZE]; 
+
 model_t	*loadmodel;
 char	loadname[32];	// for hunk tags
 
@@ -395,8 +398,76 @@ void Mod_LoadTextures (lump_t *l)
 		tx->height = mt->height;
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
+
 		// the pixels immediately follow the structures
-		memcpy ( tx+1, mt+1, pixels);
+		if (loadmodel->bspversion == HL_BSPVERSION) 
+		{
+			byte *data;
+
+			Con_DPrintf("Loading texture %s\n", tx->name);
+			data = WAD3_LoadTexture(mt);
+
+			memset(converted_pixels, 0, pixels);
+
+			if (data) {
+
+				int converted_counter = 0;
+				for (int i = 0; i < mt->width * mt->height * 4; i+= 4) {
+					converted_pixels[converted_counter] = findclosestpalmatch(data[i], data[i + 1], data[i + 2], data[i + 3]);
+					converted_counter++;
+				}
+
+				Con_DPrintf("Total: %d  Dim: %d  Diff: %d\n", pixels, mt->width * mt->height, pixels - (mt->width * mt->height));
+
+				// Fill remaining pixels from start
+				//for (int i = 0; i < pixels - (mt->width * mt->height); i++) {
+				//	converted_pixels[converted_counter] = converted_pixels[converted_counter - (mt->width * mt->height)];
+				//	converted_counter++;
+				//}
+
+				for (int i = 0; i < mt->height/2; i++) { // 64x64 projection
+					for (int j = 0; j < mt->width; j++) {
+						//Con_Printf("index: %d\n", i * (mt->width) + j * (mt->width / 64));
+						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 64) << 1)];
+						converted_counter++;
+						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 64) << 1)];
+						converted_counter++;
+					}
+				}
+				for (int i = 0; i < mt->height/4; i++) { // 32x32 projection
+					for (int j = 0; j < mt->width/2; j++) {
+						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 32) << 1)];
+						converted_counter++;
+						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 32) << 1)];
+						converted_counter++;
+					}
+				}
+
+				for (int i = 0; i < mt->height/8; i++) { // 16x16 projection 
+					for (int j = 0; j < mt->width/4; j++) {
+						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 16)) << 1];
+						converted_counter++;
+						converted_pixels[converted_counter] = converted_pixels[(i * (mt->width) + j * (mt->width / 16)) << 1];
+						converted_counter++;
+					}
+				}
+			}
+
+			memcpy(tx+1,converted_pixels,pixels);
+
+			//free(converted_pixels); 
+
+			free(data);
+
+
+			//memcpy ( tx+1, mt+1, pixels);
+			//tx->paletted = false;
+		}
+		else
+		{ 
+			memcpy ( tx+1, mt+1, pixels);
+			//tx->paletted = true;
+		}
 		
 		if (!Q_strncmp(mt->name,"sky",3))	
 			R_InitSky (tx);
@@ -817,7 +888,9 @@ void Mod_LoadFaces (lump_t *l)
 
 		for (i=0 ; i<MAXLIGHTMAPS ; i++)
 			out->styles[i] = in->styles[i];
-		i = LittleLong(in->lightofs);
+
+		i = LittleLong(in->lightofs);	 // naievil -- fake the lighting
+
 		if (i == -1)
 			out->samples = NULL;
 		else
@@ -973,29 +1046,69 @@ void Mod_LoadClipnodes (lump_t *l)
 	loadmodel->clipnodes = out;
 	loadmodel->numclipnodes = count;
 
-	hull = &loadmodel->hulls[1];
-	hull->clipnodes = out;
-	hull->firstclipnode = 0;
-	hull->lastclipnode = count-1;
-	hull->planes = loadmodel->planes;
-	hull->clip_mins[0] = -16;
-	hull->clip_mins[1] = -16;
-	hull->clip_mins[2] = -24;
-	hull->clip_maxs[0] = 16;
-	hull->clip_maxs[1] = 16;
-	hull->clip_maxs[2] = 32;
+	if (loadmodel->bspversion == HL_BSPVERSION)
+	{
+		hull = &loadmodel->hulls[1];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -16;
+		hull->clip_mins[1] = -16;
+		hull->clip_mins[2] = -36;
+		hull->clip_maxs[0] = 16;
+		hull->clip_maxs[1] = 16;
+		hull->clip_maxs[2] = 36;
 
-	hull = &loadmodel->hulls[2];
-	hull->clipnodes = out;
-	hull->firstclipnode = 0;
-	hull->lastclipnode = count-1;
-	hull->planes = loadmodel->planes;
-	hull->clip_mins[0] = -32;
-	hull->clip_mins[1] = -32;
-	hull->clip_mins[2] = -24;
-	hull->clip_maxs[0] = 32;
-	hull->clip_maxs[1] = 32;
-	hull->clip_maxs[2] = 64;
+		hull = &loadmodel->hulls[2];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -32;
+		hull->clip_mins[1] = -32;
+		hull->clip_mins[2] = -32;
+		hull->clip_maxs[0] = 32;
+		hull->clip_maxs[1] = 32;
+		hull->clip_maxs[2] = 32;
+
+	    hull = &loadmodel->hulls[3];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -16;
+		hull->clip_mins[1] = -16;
+		hull->clip_mins[2] = -18;
+		hull->clip_maxs[0] = 16;
+		hull->clip_maxs[1] = 16;
+		hull->clip_maxs[2] = 18;
+	} else {
+		hull = &loadmodel->hulls[1];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -16;
+		hull->clip_mins[1] = -16;
+		hull->clip_mins[2] = -24;
+		hull->clip_maxs[0] = 16;
+		hull->clip_maxs[1] = 16;
+		hull->clip_maxs[2] = 32;
+
+		hull = &loadmodel->hulls[2];
+		hull->clipnodes = out;
+		hull->firstclipnode = 0;
+		hull->lastclipnode = count-1;
+		hull->planes = loadmodel->planes;
+		hull->clip_mins[0] = -32;
+		hull->clip_mins[1] = -32;
+		hull->clip_mins[2] = -24;
+		hull->clip_maxs[0] = 32;
+		hull->clip_maxs[1] = 32;
+		hull->clip_maxs[2] = 64;
+	}
+
 
 	for (i=0 ; i<count ; i++, out++, in++)
 	{
@@ -1167,8 +1280,9 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	
 	header = (dheader_t *)buffer;
 
-	i = LittleLong (header->version);
-	if (i != BSPVERSION)
+	i = LittleLong(header->version);
+	mod->bspversion = i;
+	if (i != BSPVERSION && i != HL_BSPVERSION)
 		Sys_Error ("Mod_LoadBrushModel: %s has wrong version number (%i should be %i)", mod->name, i, BSPVERSION);
 
 // swap all the lumps
@@ -1362,33 +1476,15 @@ void * Mod_LoadAliasGroup (void * pin, int *pframeindex, int numv,
 Mod_LoadAliasSkin
 =================
 */
-void * Mod_LoadAliasSkin (void * pin, int *pskinindex, int skinsize,
-	aliashdr_t *pheader)
+void * Mod_LoadAliasSkin (void * pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
 {
-	int		i;
 	byte	*pskin, *pinskin;
-	unsigned short	*pusskin;
 
-	pskin = Hunk_AllocName (skinsize * r_pixbytes, loadname);
+	pskin = Hunk_AllocName (skinsize /** r_pixbytes*/, loadname);
 	pinskin = (byte *)pin;
 	*pskinindex = (byte *)pskin - (byte *)pheader;
 
-	if (r_pixbytes == 1)
-	{
-		Q_memcpy (pskin, pinskin, skinsize);
-	}
-	else if (r_pixbytes == 2)
-	{
-		pusskin = (unsigned short *)pskin;
-
-		for (i=0 ; i<skinsize ; i++)
-			pusskin[i] = d_8to16table[pinskin[i]];
-	}
-	else
-	{
-		Sys_Error ("Mod_LoadAliasSkin: driver set invalid r_pixbytes: %d\n",
-				 r_pixbytes);
-	}
+	memcpy (pskin, pinskin, skinsize);
 
 	pinskin += skinsize;
 
@@ -1568,17 +1664,14 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 
 		if (skintype == ALIAS_SKIN_SINGLE)
 		{
-			pskintype = (daliasskintype_t *)
-					Mod_LoadAliasSkin (pskintype + 1,
-									   &pskindesc[i].skin,
-									   skinsize, pheader);
+			pskintype = (daliasskintype_t *) Mod_LoadAliasSkin (pskintype + 1,
+						&pskindesc[i].skin, skinsize, pheader);
 		}
 		else
 		{
-			pskintype = (daliasskintype_t *)
-					Mod_LoadAliasSkinGroup (pskintype + 1,
-											&pskindesc[i].skin,
-											skinsize, pheader);
+			// animating skin group. yuck.
+			pskintype = (daliasskintype_t *) Mod_LoadAliasSkinGroup (pskintype + 1,
+											&pskindesc[i].skin, skinsize, pheader);
 		}
 	}
 
