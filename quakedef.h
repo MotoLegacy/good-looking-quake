@@ -23,6 +23,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	QUAKE_GAME			// as opposed to utilities
 
+//
+// MACRO FEATURE TOGGLING
+//
+
 #define FIXEDPOINT_OPT // FW: enable fixed-point optimizations
 
 /* Fixed-point optimizations, thanks to Pocket Quake and Dan East. */
