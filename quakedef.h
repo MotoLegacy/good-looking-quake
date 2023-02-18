@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 // MACRO FEATURE TOGGLING
 //
+#define OPT_STATICLIGHT 	// motolegacy -- use a static light level for models
 
 #define FIXEDPOINT_OPT // FW: enable fixed-point optimizations
 

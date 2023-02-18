@@ -237,6 +237,11 @@ int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 
 int R_LightPoint (vec3_t p)
 {
+#ifdef OPT_STATICLIGHT
+	// motolegacy -- more light hacks.
+	return 24;
+	// motolegacy end
+#else
 	vec3_t		end;
 	int			r;
 	
@@ -256,5 +261,6 @@ int R_LightPoint (vec3_t p)
 		r = r_refdef.ambientlight;
 
 	return r;
+#endif // OPT_STATICLIGHT
 }
 

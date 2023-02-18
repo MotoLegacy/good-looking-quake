@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define LIGHT_MIN	5		// lowest light value we'll allow, to avoid the
 							//  need for inner-loop light clamping
 
+#define ALIAS_LIGHT 127
+
 mtriangle_t		*ptriangles;
 affinetridesc_t	r_affinetridesc;
 
@@ -616,7 +618,12 @@ R_AliasSetupLighting
 */
 void R_AliasSetupLighting (alight_t *plighting)
 {
-
+#ifdef OPT_STATICLIGHT
+	// motolegacy -- stop wasting time computing light level.
+	r_ambientlight = (255 - ALIAS_LIGHT) << VID_CBITS;
+	r_shadelight = 0;
+	// motolegacy end
+#else
 // guarantee that no vertex will ever be lit below LIGHT_MIN, so we don't have
 // to clamp off the bottom
 	r_ambientlight = plighting->ambientlight;
@@ -640,6 +647,7 @@ void R_AliasSetupLighting (alight_t *plighting)
 	r_plightvec[0] = DotProduct (plighting->plightvec, alias_forward);
 	r_plightvec[1] = -DotProduct (plighting->plightvec, alias_right);
 	r_plightvec[2] = DotProduct (plighting->plightvec, alias_up);
+#endif // OPT_STATICLIGHT
 }
 
 /*
