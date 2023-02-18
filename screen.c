@@ -38,6 +38,8 @@ cvar_t		scr_showram = {"showram","1"};
 cvar_t		scr_showturtle = {"showturtle","0"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
+cvar_t 		scr_showfps = {"scr_showfps", "0"};
+
 
 qboolean	scr_initialized;		// ready to draw
 
@@ -321,6 +323,7 @@ void SCR_Init (void)
 	Cvar_RegisterVariable (&scr_showpause);
 	Cvar_RegisterVariable (&scr_centertime);
 	Cvar_RegisterVariable (&scr_printspeed);
+	Cvar_RegisterVariable (&scr_showfps);
 
 //
 // register our commands
@@ -336,7 +339,49 @@ void SCR_Init (void)
 	scr_initialized = true;
 }
 
+//============================================================================
 
+/*
+==============
+SCR_DrawFPS -- johnfitz
+==============
+*/
+void SCR_DrawFPS (void)
+{
+	static double	oldtime = 0;
+	static double	lastfps = 0;
+	static int	oldframecount = 0;
+	double	elapsed_time;
+	int	frames;
+
+	elapsed_time = realtime - oldtime;
+	frames = r_framecount - oldframecount;
+
+	if (elapsed_time < 0 || frames < 0)
+	{
+		oldtime = realtime;
+		oldframecount = r_framecount;
+		return;
+	}
+	// update value every 3/4 second
+	if (elapsed_time > 0.75)
+	{
+		lastfps = frames / elapsed_time;
+		oldtime = realtime;
+		oldframecount = r_framecount;
+	}
+
+	if (scr_showfps.value)
+	{
+		char	st[16];
+		int	x, y;
+		sprintf (st, "%4.0f fps", lastfps);
+		x = 320 - (strlen(st)<<3);
+		y = 200 - 8;
+
+		Draw_String (0, 0, st);
+	}
+}
 
 /*
 ==============
@@ -925,6 +970,7 @@ void SCR_UpdateScreen (void)
 		SCR_DrawPause ();
 		SCR_CheckDrawCenterString ();
 		Sbar_Draw ();
+		SCR_DrawFPS ();
 		SCR_DrawConsole ();
 		M_Draw ();
 	}
